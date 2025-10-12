@@ -8,3 +8,5 @@ to create the admin account:
 
 to stop all services:
 `docker-compose down --volumes --remove-orphans`
+
+download mongodb compass (GUI) here: https://downloads.mongodb.com/compass/mongodb-compass-1.47.1-win32-x64.exe

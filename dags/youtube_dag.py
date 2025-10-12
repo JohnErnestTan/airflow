@@ -8,57 +8,61 @@ from load_data_to_mongo import load_data_to_mongo
 
 from airflow import DAG
 
-DAG_ID = "is459_assignment_youtube"
-BASE_DIR = Path(__file__).resolve().parent
-TOPIC_FILE = BASE_DIR / "topic.txt"
+_DAG_ID = "is459_assignment_youtube"
+_ROOT = Path(__file__).resolve().parent
+_TOPIC_PATH = _ROOT / "topic.txt"
+_MONGO_URI = "mongodb://host.docker.internal:27017"
+_MONGO_DB = "youtube"
+_VIDEO_TARGET = 100
 
 
-def read_topic():
-    return TOPIC_FILE.read_text(encoding="utf-8").strip()
+def _read_topic() -> str:
+    topic_value = _TOPIC_PATH.read_text(encoding="utf-8").strip()
+    if not topic_value:
+        raise ValueError("Topic file cannot be empty.")
+    return topic_value
 
 
-def make_paths():
-    topic = read_topic()
-    out_json = BASE_DIR / f"{topic}.json"
-    return {"topic": topic, "json_path": str(out_json)}
+def _artifact_paths():
+    topic_name = _read_topic()
+    payload_path = _ROOT / f"{topic_name}.json"
+    return topic_name, payload_path
 
 
 with DAG(
-    dag_id=DAG_ID,
+    dag_id=_DAG_ID,
     start_date=datetime(2025, 10, 1),
     schedule=None,
     catchup=False,
-    description="Fetch 100 YouTube videos for a topic then load to MongoDB",
-    tags=["assignment", "youtube", "mongo"],
 ) as dag:
 
-    def task_fetch(**_):
-        info = make_paths()
-        # fetch and save JSON
+    def _run_fetch(**_):
+        topic_name, payload_path = _artifact_paths()
         fetch_videos_to_json(
-            topic=info["topic"], output_json_path=info["json_path"], max_results=100
+            topic=topic_name,
+            output_json_path=str(payload_path),
+            max_results=_VIDEO_TARGET,
         )
-        # return for logging
-        return json.dumps(info)
+        return json.dumps({"topic": topic_name, "json_path": str(payload_path)})
 
-    def task_load(**_):
-        info = make_paths()
+    def _run_load(**_):
+        topic_name, payload_path = _artifact_paths()
         load_data_to_mongo(
-            topic=info["topic"],
-            input_json_path=info["json_path"],
-            mongo_uri="mongodb://host.docker.internal:27017",
-            database="youtube",
+            topic=topic_name,
+            input_json_path=str(payload_path),
+            mongo_uri=_MONGO_URI,
+            database=_MONGO_DB,
         )
-        return f"Loaded {info['json_path']} into MongoDB collection '{info['topic']}' and removed file."
+        return f"{payload_path} stored in MongoDB collection '{topic_name}' and removed locally."
 
     fetch_task = PythonOperator(
         task_id="fetch_youtube_data",
-        python_callable=task_fetch,
+        python_callable=_run_fetch,
     )
 
     load_task = PythonOperator(
         task_id="load_data_to_mongo",
-        python_callable=task_load,
+        python_callable=_run_load,
     )
 
     fetch_task >> load_task
