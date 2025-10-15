@@ -12,7 +12,7 @@ _DAG_ID = "is459_assignment_youtube"
 _ROOT = Path(__file__).resolve().parent
 _TOPIC_PATH = _ROOT / "topic.txt"
 _MONGO_URI = "mongodb://host.docker.internal:27017"
-_MONGO_DB = "youtube"
+_MONGO_DB = "anime_youtube"
 _VIDEO_TARGET = 100
 
 

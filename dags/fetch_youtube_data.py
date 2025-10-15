@@ -8,12 +8,13 @@ from googleapiclient.discovery import build
 
 _SERVICE_NAME = "youtube"
 _SERVICE_VERSION = "v3"
-_SEARCH_PAGE_SIZE = 50
+_SEARCH_PAGE_SIZE = 50 #max num of videos per API call
 _DETAIL_PAGE_SIZE = 50
-_API_THROTTLE_SECONDS = 0.1
+_API_THROTTLE_SECONDS = 0.2 #to prevent hitting rate limits
 
 
 def _build_client():
+    # Constructs the YouTube API client using the API key from environment variables.
     api_key = os.getenv("YOUTUBE_API_KEY")
     if not api_key:
         raise RuntimeError("Missing YOUTUBE_API_KEY environment variable.")
@@ -64,10 +65,10 @@ def _fetch_video_payloads(client, identifiers: Sequence[str]) -> List[dict]:
 
 def _normalize_payload(raw_items: Iterable[dict]) -> List[dict]:
     formatted: List[dict] = []
-    for entry in raw_items:
-        snippet = entry.get("snippet", {})
-        stats = entry.get("statistics", {})
-        video_id = entry.get("id")
+    for item in raw_items:
+        snippet = item.get("snippet", {})
+        stats = item.get("statistics", {})
+        video_id = item.get("id")
         formatted.append(
             {
                 "videoId": video_id,
@@ -95,8 +96,8 @@ def fetch_videos_to_json(topic: str, output_json_path: str, max_results: int = 1
     ids = _gather_video_ids(youtube_client, topic, target_count=max_results)
     raw_data = _fetch_video_payloads(youtube_client, ids)
     normalized = _normalize_payload(raw_data)
-    destination = Path(output_json_path)
-    destination.write_text(
+    destination_path = Path(output_json_path)
+    destination_path.write_text(
         json.dumps(normalized, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    return destination
+    return destination_path
