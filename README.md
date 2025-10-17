@@ -21,7 +21,7 @@ Access the Airflow UI at <http://localhost:8080> using the admin credentials abo
 
 ## Running the Assignment DAG
 
-1. Set your topic in `dags/topic.txt` (e.g., `family guy`).
+1. Set your topic in `dags/topic.txt` (e.g., `whatever topic you want`).
 2. Ensure MongoDB is reachable at `mongodb://localhost:27017` or adjust the URI in `dags/youtube_dag.py`.
 3. Trigger the DAG `is459_assignment_youtube` from the UI.
 4. Monitor task logs:
